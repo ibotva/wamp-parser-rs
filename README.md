@@ -3,7 +3,7 @@ This ***is not*** a WAMP Library. This ***is*** a library for parsing WAMP messa
 
 ## Cargo.toml
 ```toml
-wamp_helpers = { git = "https://github.com/ibotva/wamp-parser-rs.git", branch = "main" }
+wamp-helpers = { git = "https://github.com/ibotva/wamp-parser-rs.git", branch = "main" }
 ```
 
 ## Usage

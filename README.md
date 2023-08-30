@@ -1,6 +1,11 @@
 # Wamp Protocol Helpers
 This ***is not*** a WAMP Library. This ***is*** a library for parsing WAMP messages. This repo requires the `json` crate to work. The docs this repo was based on can be found at [WAMP Protocol](https://github.com/Raynes/WAMP/blob/master/spec/basic.md).
 
+## Cargo.toml
+```toml
+wamp_helpers = { git = "https://github.com/ibotva/wamp-parser-rs.git", branch = "main" }
+```
+
 ## Usage
 ```rs
 // Create a Hello message to Send to the WAMP server

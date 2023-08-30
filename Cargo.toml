@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.32.0", features = ["full"] }
 tokio-test ="0.4.2"
-websocket = "0.26.5"
 url = "2.4.0"
 futures-util = "0.3.28"
 json = "0.12.4"
-snafu = "0.7.5"

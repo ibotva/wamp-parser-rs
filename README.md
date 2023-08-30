@@ -4,6 +4,7 @@ This ***is not*** a WAMP Library. This ***is*** a library for parsing WAMP messa
 ## Cargo.toml
 ```toml
 wamp-helpers = { git = "https://github.com/ibotva/wamp-parser-rs.git", branch = "main" }
+json = "*"
 ```
 
 ## Usage

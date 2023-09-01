@@ -1432,6 +1432,7 @@ impl FromStr for Interrupt {
     }
 }
 
+#[derive(Debug)]
 pub enum Events {
     Hello(Hello),
     Welcome(Welcome),

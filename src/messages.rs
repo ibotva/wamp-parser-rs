@@ -5,12 +5,6 @@ use json::JsonValue;
 pub type WampId = u64;
 pub type Uri = String;
 
-pub enum WampResult<T: WampMessageTrait + FromStr> {
-    WampValue(T),
-    WampError(ErrorMessage),
-    Error(Error)
-}
-
 #[derive(Debug)]
 pub enum Roles {
     Callee,

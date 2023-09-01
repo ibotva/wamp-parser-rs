@@ -2,8 +2,6 @@ use json::JsonValue;
 
 #[derive(Debug)]
 pub enum Error {
-    UrlParseError(websocket::url::ParseError),
-    WebSocketError(websocket::WebSocketError),
     DefaultImplementationError(&'static str),
     JsonError(json::Error),
     InvalidId,

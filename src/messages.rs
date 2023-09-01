@@ -678,6 +678,7 @@ impl FromStr for Unsubscribe {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Unsubscribed {
     request: WampId
 }
@@ -1432,7 +1433,7 @@ impl FromStr for Interrupt {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Events {
     Hello(Hello),
     Welcome(Welcome),

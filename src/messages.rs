@@ -680,7 +680,7 @@ impl FromStr for Unsubscribe {
 
 #[derive(Debug, Clone)]
 pub struct Unsubscribed {
-    request: WampId
+    pub request: WampId
 }
 
 impl WampMessageTrait for Unsubscribed {
@@ -1262,8 +1262,8 @@ impl FromStr for Yield {
 
 #[derive(Debug, Clone)]
 pub struct Challenge {
-    authmethod: String,
-    details: Kwargs
+    pub authmethod: String,
+    pub details: Kwargs
 }
 
 impl WampMessageTrait for Challenge {
@@ -1306,8 +1306,8 @@ impl FromStr for Challenge {
 
 #[derive(Debug, Clone)]
 pub struct Authenticate {
-    signature: String,
-    details: Kwargs
+    pub signature: String,
+    pub details: Kwargs
 }
 
 impl WampMessageTrait for Authenticate {
@@ -1350,8 +1350,8 @@ impl FromStr for Authenticate {
 
 #[derive(Debug, Clone)]
 pub struct Cancel {
-    request: WampId,
-    options: Options
+    pub request: WampId,
+    pub options: Options
 }
 
 impl WampMessageTrait for Cancel {
@@ -1391,8 +1391,8 @@ impl FromStr for Cancel {
 
 #[derive(Debug, Clone)]
 pub struct Interrupt {
-    request: WampId,
-    options: Options
+    pub request: WampId,
+    pub options: Options
 }
 
 impl WampMessageTrait for Interrupt {

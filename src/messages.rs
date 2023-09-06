@@ -182,8 +182,6 @@ impl WampMessageTrait for Hello {
     /// //let message = hello.to_json().to_string();
     /// 
     /// //print!("{}", message.to_string());
-    /// 
-    /// print!("{:#?}", hello.to_websocket_message().unwrap())
     /// ```
     fn to_json(self) -> Result<JsonValue, Error> {
         Ok(json::array![
@@ -206,12 +204,6 @@ impl WampMessageTrait for Hello {
     
 }
 
-impl Hello {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl FromStr for Hello {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -228,12 +220,6 @@ impl FromStr for Hello {
 pub struct Welcome {
     pub session: u64,
     pub details: Details
-}
-
-impl Welcome {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Welcome {
@@ -282,12 +268,6 @@ pub struct Abort {
     pub reason: Uri
 }
 
-impl Abort {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Abort {
     const ID: u8 = 3;
 
@@ -327,12 +307,6 @@ impl FromStr for Abort {
 pub struct Goodbye {
     pub details: Details,
     pub reason: Uri
-}
-
-impl Goodbye {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Goodbye {
@@ -382,12 +356,6 @@ pub struct ErrorMessage {
     pub error: Uri,
     pub args: Option<Args>,
     pub kwargs: Option<Kwargs>
-}
-
-impl ErrorMessage {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for ErrorMessage {
@@ -462,12 +430,6 @@ pub struct Publish {
     pub topic: Uri,
     pub args: Option<Args>,
     pub kwargs: Option<Kwargs>
-}
-
-impl Publish {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Publish {
@@ -548,12 +510,6 @@ pub struct Published {
     pub publication: WampId
 }
 
-impl Published {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Published {
     const ID: u8 = 17;
 
@@ -597,12 +553,6 @@ pub struct Subscribe {
     pub request: WampId,    
     pub options: Options,
     pub topic: Uri
-}
-
-impl Subscribe {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Subscribe {
@@ -652,12 +602,6 @@ pub struct Subscribed {
     pub subscription: WampId
 }
 
-impl Subscribed {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Subscribed {
     const ID: u8 = 33;
 
@@ -700,12 +644,6 @@ pub struct Unsubscribe {
     pub subscription: WampId
 }
 
-impl Unsubscribe {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Unsubscribe {
     const ID: u8 = 34;
 
@@ -744,12 +682,6 @@ impl FromStr for Unsubscribe {
 #[derive(Debug, Clone)]
 pub struct Unsubscribed {
     pub request: WampId
-}
-
-impl Unsubscribed {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Unsubscribed {
@@ -791,12 +723,6 @@ pub struct Event {
     pub details: Details,
     pub args: Option<Args>,
     pub kwargs: Option<Kwargs>
-}
-
-impl Event {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Event {
@@ -874,12 +800,6 @@ pub struct Call {
     pub procedure: Uri,
     pub args: Option<Args>,
     pub kwargs: Option<Kwargs>
-}
-
-impl Call {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Call {
@@ -960,12 +880,6 @@ pub struct MessageResult {
     pub kwargs: Option<Kwargs>
 }
 
-impl MessageResult {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for MessageResult {
     const ID: u8 = 50;
 
@@ -1035,12 +949,6 @@ pub struct Register {
     pub procedure: Uri
 }
 
-impl Register {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Register {
     const ID: u8 = 64;
 
@@ -1085,12 +993,6 @@ pub struct Registered {
     pub registration: WampId
 }
 
-impl Registered {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Registered {
     const ID: u8 = 65;
 
@@ -1132,12 +1034,6 @@ pub struct Unregister {
     pub registration: WampId
 }
 
-impl Unregister {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Unregister {
     const ID: u8 = 66;
 
@@ -1176,12 +1072,6 @@ impl FromStr for Unregister {
 #[derive(Debug, Clone)]
 pub struct Unregistered {
     pub request: WampId
-}
-
-impl Unregistered {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Unregistered {
@@ -1226,12 +1116,6 @@ pub struct Invocation {
     pub details: Details,
     pub args: Option<Args>,
     pub kwargs: Option<Kwargs>
-}
-
-impl Invocation {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Invocation {
@@ -1311,12 +1195,6 @@ pub struct Yield {
     pub kwargs: Option<Kwargs>
 }
 
-impl Yield {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Yield {
     const ID: u8 = 70;
 
@@ -1389,12 +1267,6 @@ pub struct Challenge {
     pub details: Kwargs
 }
 
-impl Challenge {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Challenge {
     const ID: u8 = 4;
 
@@ -1437,12 +1309,6 @@ impl FromStr for Challenge {
 pub struct Authenticate {
     pub signature: String,
     pub details: Kwargs
-}
-
-impl Authenticate {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Authenticate {
@@ -1489,12 +1355,6 @@ pub struct Cancel {
     pub options: Options
 }
 
-impl Cancel {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
-}
-
 impl WampMessageTrait for Cancel {
     const ID: u8 = 49;
 
@@ -1534,12 +1394,6 @@ impl FromStr for Cancel {
 pub struct Interrupt {
     pub request: WampId,
     pub options: Options
-}
-
-impl Interrupt {
-    pub fn to_websocket_message(self) -> Result<websocket::Message<'static>, Error> {
-        Ok(websocket::Message::text(self.to_json()?.to_string()))
-    }
 }
 
 impl WampMessageTrait for Interrupt {

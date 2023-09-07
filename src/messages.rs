@@ -1,6 +1,6 @@
-use std::str::FromStr;
 use crate::error::Error;
 use json::JsonValue;
+use std::str::FromStr;
 
 pub type WampId = u64;
 pub type Uri = String;
@@ -12,13 +12,13 @@ pub enum Roles {
     Publisher,
     Subscriber,
     Dealer, // Dealer performs routing between Callee and Caller, A broker performs routing of events from publishers to subscribers.
-    Broker
+    Broker,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct MessageDirection {
     pub receives: &'static bool,
-    pub sends: &'static bool
+    pub sends: &'static bool,
 }
 
 pub type Args = JsonValue;
@@ -87,8 +87,9 @@ pub trait WampMessageTrait {
 
     fn to_json(self) -> Result<JsonValue, Error>;
 
-    fn get_message_direction(role: Roles) -> &'static MessageDirection where Self:Sized;
-
+    fn get_message_direction(role: Roles) -> &'static MessageDirection
+    where
+        Self: Sized;
 
     fn validate_id(value: JsonValue) -> Result<u8, Error> {
         if let Some(id) = value.as_u8() {
@@ -105,7 +106,7 @@ pub trait WampMessageTrait {
     fn parse_raw_json(data: String) -> Result<JsonValue, Error> {
         match json::parse(&data) {
             Ok(new_data) => Ok(new_data),
-            Err(err) => Err(Error::JsonError(err))
+            Err(err) => Err(Error::JsonError(err)),
         }
     }
 }
@@ -113,7 +114,7 @@ pub trait WampMessageTrait {
 #[derive(Debug, Clone)]
 pub struct Hello {
     pub realm: Uri,
-    pub details: Details
+    pub details: Details,
 }
 
 impl Hello {
@@ -122,28 +123,28 @@ impl Hello {
     /// ```
     /// use wamp_v1::messages::{Hello, Roles};
     /// let hello = Hello::default(
-    ///     "some.realm.uri".to_string(), 
+    ///     "some.realm.uri".to_string(),
     ///     vec![Roles::Callee, Roles::Caller, Roles::Publisher, Roles::Subscriber],
     ///     Some(vec!["ticket".to_string()]) // Should be `None` for non advanced configurations
     /// );
     /// ```
     pub fn default(realm: String, roles: Vec<Roles>, authmethods: Option<Vec<String>>) -> Self {
-        let mut details = json::object!{
+        let mut details = json::object! {
             roles: {
 
             }
         };
-        
+
         for role in roles {
             match role {
-                Roles::Callee => details["roles"]["callee"] = json::object!{},
-                Roles::Caller => details["roles"]["caller"] = json::object!{},
-                Roles::Publisher => details["roles"]["publisher"] = json::object!{},
-                Roles::Subscriber => details["roles"]["subscriber"] = json::object!{},
-                Roles::Dealer => details["roles"]["dealer"] = json::object!{},
-                Roles::Broker => details["roles"]["broker"] = json::object!{},
+                Roles::Callee => details["roles"]["callee"] = json::object! {},
+                Roles::Caller => details["roles"]["caller"] = json::object! {},
+                Roles::Publisher => details["roles"]["publisher"] = json::object! {},
+                Roles::Subscriber => details["roles"]["subscriber"] = json::object! {},
+                Roles::Dealer => details["roles"]["dealer"] = json::object! {},
+                Roles::Broker => details["roles"]["broker"] = json::object! {},
             }
-        };
+        }
 
         if let Some(authmethods) = authmethods {
             details["authmethods"] = json::array![];
@@ -153,18 +154,15 @@ impl Hello {
         };
 
         Hello { realm, details }
-        
     }
-
 }
-
 
 impl WampMessageTrait for Hello {
     const ID: u8 = 1;
     ///```
     /// use wamp_helpers::messages::{Hello, WampMessageTrait};
     /// use json::object;
-    /// // To create a new Hello Message 
+    /// // To create a new Hello Message
     /// let hello = Hello {
     ///     realm: "some.uri.path".to_string(),
     ///     details: object!{
@@ -177,31 +175,44 @@ impl WampMessageTrait for Hello {
     ///         }
     ///     }
     /// };
-    /// 
+    ///
     /// // This converts it to a websocket readable message.
     /// //let message = hello.to_json().to_string();
-    /// 
+    ///
     /// //print!("{}", message.to_string());
     /// ```
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.realm,
-            self.details])
+        Ok(json::array![Self::ID, self.realm, self.details])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &true },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &true },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &true },
-            Roles::Dealer => &MessageDirection { receives: &true, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
         }
     }
-
-    
 }
 
 impl FromStr for Hello {
@@ -215,37 +226,48 @@ impl FromStr for Hello {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Welcome {
     pub session: u64,
-    pub details: Details
+    pub details: Details,
 }
 
 impl WampMessageTrait for Welcome {
     const ID: u8 = 2;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.session,
-            self.details
-        ])
+        Ok(json::array![Self::ID, self.session, self.details])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &true, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &true, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
-
-
 
 impl FromStr for Welcome {
     type Err = Error;
@@ -255,38 +277,49 @@ impl FromStr for Welcome {
         let _id = Self::validate_id(data.array_remove(0))?;
         let session = validate_u64_argument(data.array_remove(0))?;
         let details = validate_dict_argument(data.array_remove(0))?;
-        Ok(Welcome {
-            session,
-            details
-        })
+        Ok(Welcome { session, details })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Abort {
     pub details: Details,
-    pub reason: Uri
+    pub reason: Uri,
 }
 
 impl WampMessageTrait for Abort {
     const ID: u8 = 3;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.details,
-            self.reason
-        ])
+        Ok(json::array![Self::ID, self.details, self.reason])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &true, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &true, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true }
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -300,34 +333,48 @@ impl FromStr for Abort {
         let details = validate_dict_argument(data.array_remove(0))?;
         let reason = validate_str_argument(data.array_remove(0))?;
         Ok(Abort { details, reason })
-    }   
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Goodbye {
     pub details: Details,
-    pub reason: Uri
+    pub reason: Uri,
 }
 
 impl WampMessageTrait for Goodbye {
     const ID: u8 = 6;
-    
+
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.details,
-            self.reason
-        ])
+        Ok(json::array![Self::ID, self.details, self.reason])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &true, sends: &true },
-            Roles::Publisher => &MessageDirection { receives: &true, sends: &true },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &true, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
         }
     }
 }
@@ -340,11 +387,7 @@ impl FromStr for Goodbye {
         let _id = Self::validate_id(data.array_remove(0))?;
         let details = validate_dict_argument(data.array_remove(0))?;
         let reason = validate_str_argument(data.array_remove(0))?;
-        Ok(Goodbye{
-            details,
-            reason
-        })
-        
+        Ok(Goodbye { details, reason })
     }
 }
 
@@ -355,7 +398,7 @@ pub struct ErrorMessage {
     pub details: Details,
     pub error: Uri,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for ErrorMessage {
@@ -373,8 +416,7 @@ impl WampMessageTrait for ErrorMessage {
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -386,10 +428,8 @@ impl WampMessageTrait for ErrorMessage {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -397,12 +437,30 @@ impl WampMessageTrait for ErrorMessage {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &true, sends: &false },
-            Roles::Publisher =>  &MessageDirection { receives: &true, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &true, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -419,7 +477,14 @@ impl FromStr for ErrorMessage {
         let error = validate_str_argument(data.array_remove(0))?;
         let args = validate_args(data.array_remove(0))?;
         let kwargs = validate_kwargs(data.array_remove(0))?;
-        Ok(Self { request_type, request, details, error, args, kwargs })
+        Ok(Self {
+            request_type,
+            request,
+            details,
+            error,
+            args,
+            kwargs,
+        })
     }
 }
 
@@ -429,24 +494,18 @@ pub struct Publish {
     pub options: Options,
     pub topic: Uri,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for Publish {
     const ID: u8 = 16;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        let mut data = json::array![
-            Self::ID,
-            self.request,
-            self.options,
-            self.topic
-        ];
+        let mut data = json::array![Self::ID, self.request, self.options, self.topic];
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -458,10 +517,8 @@ impl WampMessageTrait for Publish {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -469,12 +526,30 @@ impl WampMessageTrait for Publish {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &true },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
         }
     }
 }
@@ -498,7 +573,7 @@ impl FromStr for Publish {
                 options,
                 topic,
                 args,
-                kwargs
+                kwargs,
             })
         }
     }
@@ -507,28 +582,42 @@ impl FromStr for Publish {
 #[derive(Debug, Clone)]
 pub struct Published {
     pub request: WampId,
-    pub publication: WampId
+    pub publication: WampId,
 }
 
 impl WampMessageTrait for Published {
     const ID: u8 = 17;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.publication
-        ])
+        Ok(json::array![Self::ID, self.request, self.publication])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &true, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -550,9 +639,9 @@ impl FromStr for Published {
 
 #[derive(Debug, Clone)]
 pub struct Subscribe {
-    pub request: WampId,    
+    pub request: WampId,
     pub options: Options,
-    pub topic: Uri
+    pub topic: Uri,
 }
 
 impl WampMessageTrait for Subscribe {
@@ -561,6 +650,7 @@ impl WampMessageTrait for Subscribe {
     fn to_json(self) -> Result<JsonValue, Error> {
         Ok(json::array![
             Self::ID,
+            self.request,
             self.options,
             self.topic
         ])
@@ -568,12 +658,30 @@ impl WampMessageTrait for Subscribe {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller =>  &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &true },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
         }
     }
 }
@@ -590,41 +698,53 @@ impl FromStr for Subscribe {
         Ok(Subscribe {
             request,
             options,
-            topic
+            topic,
         })
-
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Subscribed {
     pub request: WampId,
-    pub subscription: WampId
+    pub subscription: WampId,
 }
 
 impl WampMessageTrait for Subscribed {
     const ID: u8 = 33;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.subscription
-        ])
+        Ok(json::array![Self::ID, self.request, self.subscription])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
-
 
 impl FromStr for Subscribed {
     type Err = Error;
@@ -634,35 +754,52 @@ impl FromStr for Subscribed {
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
         let subscription = validate_u64_argument(data.array_remove(0))?;
-        Ok(Subscribed { request, subscription })
+        Ok(Subscribed {
+            request,
+            subscription,
+        })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Unsubscribe {
     pub request: WampId,
-    pub subscription: WampId
+    pub subscription: WampId,
 }
 
 impl WampMessageTrait for Unsubscribe {
     const ID: u8 = 34;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.subscription
-        ])
+        Ok(json::array![Self::ID, self.request, self.subscription])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &true },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
         }
     }
 }
@@ -675,33 +812,54 @@ impl FromStr for Unsubscribe {
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
         let subscription = validate_u64_argument(data.array_remove(0))?;
-        Ok(Unsubscribe { request, subscription })
+        Ok(Unsubscribe {
+            request,
+            subscription,
+        })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Unsubscribed {
-    pub request: WampId
+    pub request: WampId,
 }
 
 impl WampMessageTrait for Unsubscribed {
     const ID: u8 = 35;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request
-        ])
+        Ok(json::array![Self::ID, self.request])
     }
 
-    fn get_message_direction(role: Roles) -> &'static MessageDirection where Self:Sized {
+    fn get_message_direction(role: Roles) -> &'static MessageDirection
+    where
+        Self: Sized,
+    {
         match role {
-            Roles::Callee => &MessageDirection{ receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection{ receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection{ receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection{ receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection{ receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection{ receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -722,24 +880,18 @@ pub struct Event {
     pub publication: WampId,
     pub details: Details,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for Event {
     const ID: u8 = 36;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        let mut data = json::array![
-            Self::ID,
-            self.subscription,
-            self.publication,
-            self.details
-        ];
+        let mut data = json::array![Self::ID, self.subscription, self.publication, self.details];
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -751,10 +903,8 @@ impl WampMessageTrait for Event {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -762,12 +912,30 @@ impl WampMessageTrait for Event {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -788,7 +956,7 @@ impl FromStr for Event {
             publication,
             details,
             args,
-            kwargs
+            kwargs,
         })
     }
 }
@@ -799,25 +967,19 @@ pub struct Call {
     pub options: Options,
     pub procedure: Uri,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for Call {
     const ID: u8 = 48;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        let mut data = json::array![
-            Self::ID,
-            self.request,
-            self.options,
-            self.procedure
-        ];
+        let mut data = json::array![Self::ID, self.request, self.options, self.procedure];
 
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -829,10 +991,8 @@ impl WampMessageTrait for Call {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -840,16 +1000,33 @@ impl WampMessageTrait for Call {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &true },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
-
 
 impl FromStr for Call {
     type Err = Error;
@@ -867,7 +1044,7 @@ impl FromStr for Call {
             options,
             procedure,
             args,
-            kwargs
+            kwargs,
         })
     }
 }
@@ -877,24 +1054,19 @@ pub struct MessageResult {
     pub request: WampId,
     pub details: Details,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for MessageResult {
     const ID: u8 = 50;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        let mut data = json::array![
-            Self::ID,
-            self.request,
-            self.details
-        ];
+        let mut data = json::array![Self::ID, self.request, self.details];
 
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -906,10 +1078,8 @@ impl WampMessageTrait for MessageResult {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -917,16 +1087,33 @@ impl WampMessageTrait for MessageResult {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller =>  &MessageDirection { receives: &true, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &false },
-            Roles::Broker =>  &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
-
 
 impl FromStr for MessageResult {
     type Err = Error;
@@ -938,7 +1125,12 @@ impl FromStr for MessageResult {
         let details = validate_dict_argument(data.array_remove(0))?;
         let args = validate_args(data.array_remove(0))?;
         let kwargs = validate_kwargs(data.array_remove(0))?;
-        Ok(MessageResult { request, details, args, kwargs })
+        Ok(MessageResult {
+            request,
+            details,
+            args,
+            kwargs,
+        })
     }
 }
 
@@ -946,27 +1138,41 @@ impl FromStr for MessageResult {
 pub struct Register {
     pub request: WampId,
     pub options: Options,
-    pub procedure: Uri
+    pub procedure: Uri,
 }
 
 impl WampMessageTrait for Register {
     const ID: u8 = 64;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            self.request, 
-            self.options, 
-            self.procedure
-        ])
+        Ok(json::array![self.request, self.options, self.procedure])
     }
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &true, sends: &false },
-            Roles::Broker =>  &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -982,7 +1188,7 @@ impl FromStr for Register {
         Ok(Register {
             request,
             options,
-            procedure
+            procedure,
         })
     }
 }
@@ -990,28 +1196,42 @@ impl FromStr for Register {
 #[derive(Debug, Clone)]
 pub struct Registered {
     pub request: WampId,
-    pub registration: WampId
+    pub registration: WampId,
 }
 
 impl WampMessageTrait for Registered {
     const ID: u8 = 65;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.registration
-        ])
+        Ok(json::array![Self::ID, self.request, self.registration])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1024,35 +1244,52 @@ impl FromStr for Registered {
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
         let registration = validate_u64_argument(data.array_remove(0))?;
-        Ok(Registered { request, registration })
+        Ok(Registered {
+            request,
+            registration,
+        })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Unregister {
     pub request: WampId,
-    pub registration: WampId
+    pub registration: WampId,
 }
 
 impl WampMessageTrait for Unregister {
     const ID: u8 = 66;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.registration
-        ])
+        Ok(json::array![Self::ID, self.request, self.registration])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber =>  &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives:&true, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1065,33 +1302,51 @@ impl FromStr for Unregister {
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
         let registration = validate_u64_argument(data.array_remove(0))?;
-        Ok(Unregister { request, registration })
+        Ok(Unregister {
+            request,
+            registration,
+        })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Unregistered {
-    pub request: WampId
+    pub request: WampId,
 }
 
 impl WampMessageTrait for Unregistered {
     const ID: u8 = 67;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request
-        ])
+        Ok(json::array![Self::ID, self.request])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1103,9 +1358,7 @@ impl FromStr for Unregistered {
         let mut data = Self::parse_raw_json(s.to_string())?;
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
-        Ok(Unregistered{
-            request
-        })
+        Ok(Unregistered { request })
     }
 }
 
@@ -1115,25 +1368,19 @@ pub struct Invocation {
     pub registration: WampId,
     pub details: Details,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for Invocation {
     const ID: u8 = 68;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        let mut data = json::array![
-            Self::ID,
-            self.request,
-            self.registration,
-            self.details
-        ];
+        let mut data = json::array![Self::ID, self.request, self.registration, self.details];
 
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -1145,10 +1392,8 @@ impl WampMessageTrait for Invocation {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -1156,12 +1401,30 @@ impl WampMessageTrait for Invocation {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1182,7 +1445,7 @@ impl FromStr for Invocation {
             registration,
             details,
             args,
-            kwargs
+            kwargs,
         })
     }
 }
@@ -1192,24 +1455,19 @@ pub struct Yield {
     pub request: WampId,
     pub options: Options,
     pub args: Option<Args>,
-    pub kwargs: Option<Kwargs>
+    pub kwargs: Option<Kwargs>,
 }
 
 impl WampMessageTrait for Yield {
     const ID: u8 = 70;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-
-        let mut data = json::array![
-            Self::ID,
-            self.options
-        ];
+        let mut data = json::array![Self::ID, self.options];
 
         let is_array = if let Some(args) = self.args {
             let n = args.is_array();
             if n {
-                data.push(args)
-                    .map_err(|err| Error::JsonError(err))?;
+                data.push(args).map_err(|err| Error::JsonError(err))?;
             }
             n
         } else {
@@ -1222,9 +1480,7 @@ impl WampMessageTrait for Yield {
                     data.push(json::array![])
                         .map_err(|err| Error::JsonError(err))?;
                 }
-                data.push(kwargs)
-                    .map_err(|err| Error::JsonError(err))?;
-                
+                data.push(kwargs).map_err(|err| Error::JsonError(err))?;
             };
         }
         Ok(data)
@@ -1232,12 +1488,30 @@ impl WampMessageTrait for Yield {
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives:&true, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1252,11 +1526,11 @@ impl FromStr for Yield {
         let options = validate_dict_argument(data.array_remove(0))?;
         let args = validate_args(data.array_remove(0))?;
         let kwargs = validate_kwargs(data.array_remove(0))?;
-        Ok(Yield{
+        Ok(Yield {
             request,
             options,
             args,
-            kwargs
+            kwargs,
         })
     }
 }
@@ -1264,28 +1538,42 @@ impl FromStr for Yield {
 #[derive(Debug, Clone)]
 pub struct Challenge {
     pub authmethod: String,
-    pub details: Kwargs
+    pub details: Kwargs,
 }
 
 impl WampMessageTrait for Challenge {
     const ID: u8 = 4;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.authmethod,
-            self.details
-        ])
+        Ok(json::array![Self::ID, self.authmethod, self.details])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &true, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &true, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &true, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &true },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
         }
     }
 }
@@ -1298,9 +1586,9 @@ impl FromStr for Challenge {
         let _id = Self::validate_id(data.array_remove(0))?;
         let authmethod = validate_str_argument(data.array_remove(0))?;
         let details = validate_dict_argument(data.array_remove(0))?;
-        Ok(Challenge{
+        Ok(Challenge {
             authmethod,
-            details
+            details,
         })
     }
 }
@@ -1308,28 +1596,42 @@ impl FromStr for Challenge {
 #[derive(Debug, Clone)]
 pub struct Authenticate {
     pub signature: String,
-    pub details: Kwargs
+    pub details: Kwargs,
 }
 
 impl WampMessageTrait for Authenticate {
     const ID: u8 = 5;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.signature,
-            self.details
-        ])
+        Ok(json::array![Self::ID, self.signature, self.details])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &true },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &true },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &true },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &true },
-            Roles::Dealer => &MessageDirection { receives: &true, sends: &false },
-            Roles::Broker => &MessageDirection { receives: &true, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
         }
     }
 }
@@ -1342,38 +1644,49 @@ impl FromStr for Authenticate {
         let _id = Self::validate_id(data.array_remove(0))?;
         let signature = validate_str_argument(data.array_remove(0))?;
         let details = validate_dict_argument(data.array_remove(0))?;
-        Ok(Authenticate{
-            signature,
-            details
-        })
+        Ok(Authenticate { signature, details })
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Cancel {
     pub request: WampId,
-    pub options: Options
+    pub options: Options,
 }
 
 impl WampMessageTrait for Cancel {
     const ID: u8 = 49;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.options
-        ])
+        Ok(json::array![Self::ID, self.request, self.options])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &false, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &true },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1393,28 +1706,42 @@ impl FromStr for Cancel {
 #[derive(Debug, Clone)]
 pub struct Interrupt {
     pub request: WampId,
-    pub options: Options
+    pub options: Options,
 }
 
 impl WampMessageTrait for Interrupt {
     const ID: u8 = 69;
 
     fn to_json(self) -> Result<JsonValue, Error> {
-        Ok(json::array![
-            Self::ID,
-            self.request,
-            self.options
-        ])
+        Ok(json::array![Self::ID, self.request, self.options])
     }
 
     fn get_message_direction(role: Roles) -> &'static MessageDirection {
         match role {
-            Roles::Callee => &MessageDirection { receives: &true, sends: &false },
-            Roles::Caller => &MessageDirection { receives: &false, sends: &false },
-            Roles::Publisher => &MessageDirection { receives: &false, sends: &false },
-            Roles::Subscriber => &MessageDirection { receives: &false, sends: &false },
-            Roles::Dealer => &MessageDirection { receives: &false, sends: &true },
-            Roles::Broker => &MessageDirection { receives: &false, sends: &false },
+            Roles::Callee => &MessageDirection {
+                receives: &true,
+                sends: &false,
+            },
+            Roles::Caller => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Publisher => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Subscriber => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
+            Roles::Dealer => &MessageDirection {
+                receives: &false,
+                sends: &true,
+            },
+            Roles::Broker => &MessageDirection {
+                receives: &false,
+                sends: &false,
+            },
         }
     }
 }
@@ -1427,10 +1754,7 @@ impl FromStr for Interrupt {
         let _id = Self::validate_id(data.array_remove(0))?;
         let request = validate_u64_argument(data.array_remove(0))?;
         let options = validate_dict_argument(data.array_remove(0))?;
-        Ok(Interrupt{
-            request,
-            options
-        })
+        Ok(Interrupt { request, options })
     }
 }
 
@@ -1459,71 +1783,57 @@ pub enum Events {
     Unregistered(Unregistered),
     Invocation(Invocation),
     Interrupt(Interrupt),
-    Yield(Yield)
+    Yield(Yield),
 }
 
 impl Events {
     pub fn parse_message(raw_message_string: &String) -> Result<Self, Error> {
-        let mut data = json::parse(raw_message_string)
-            .map_err(|err| Error::JsonError(err))?;
+        let mut data = json::parse(raw_message_string).map_err(|err| Error::JsonError(err))?;
 
         let id = data.array_remove(0).as_u8();
-        
+
         if let Some(id) = id {
             match id {
                 Hello::ID => {
-
                     let realm = validate_str_argument(data.array_remove(0))?;
                     let details = validate_dict_argument(data.array_remove(0))?;
 
-                    Ok(Self::Hello(
-                        Hello { realm, details }
-                    ))
+                    Ok(Self::Hello(Hello { realm, details }))
                 }
-                
-                Welcome::ID => {
 
+                Welcome::ID => {
                     let session = validate_u64_argument(data.array_remove(0))?;
                     let details = validate_dict_argument(data.array_remove(0))?;
 
-                    Ok(Self::Welcome(
-                        Welcome { session, details }
-                    ))
+                    Ok(Self::Welcome(Welcome { session, details }))
                 }
 
                 Abort::ID => {
-
                     let details = validate_dict_argument(data.array_remove(0))?;
                     let reason = validate_str_argument(data.array_remove(0))?;
-                    Ok(Self::Abort(
-                        Abort { details, reason }
-                    ))
-
+                    Ok(Self::Abort(Abort { details, reason }))
                 }
 
                 Challenge::ID => {
                     let authmethod = validate_str_argument(data.array_remove(0))?;
                     let details = validate_dict_argument(data.array_remove(0))?;
-                    
-                    Ok(Self::Challenge(
-                        Challenge { authmethod, details }
-                    ))
+
+                    Ok(Self::Challenge(Challenge {
+                        authmethod,
+                        details,
+                    }))
                 }
 
                 Authenticate::ID => {
                     let signature = validate_str_argument(data.array_remove(0))?;
                     let details = validate_dict_argument(data.array_remove(0))?;
-                    Ok(Self::Authenticate(
-                        Authenticate { signature, details }
-                    ))
+                    Ok(Self::Authenticate(Authenticate { signature, details }))
                 }
 
                 Goodbye::ID => {
                     let details = validate_dict_argument(data.array_remove(0))?;
                     let reason = validate_str_argument(data.array_remove(0))?;
-                    Ok(Self::Goodbye(
-                        Goodbye { details, reason }
-                    ))
+                    Ok(Self::Goodbye(Goodbye { details, reason }))
                 }
 
                 ErrorMessage::ID => {
@@ -1533,9 +1843,14 @@ impl Events {
                     let error = validate_str_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::ErrorMessage(
-                        ErrorMessage { request_type, request, details, error, args, kwargs }
-                    ))
+                    Ok(Self::ErrorMessage(ErrorMessage {
+                        request_type,
+                        request,
+                        details,
+                        error,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Publish::ID => {
@@ -1544,49 +1859,56 @@ impl Events {
                     let topic = validate_str_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::Publish(
-                        Publish { request, options, topic, args, kwargs }
-                    ))
+                    Ok(Self::Publish(Publish {
+                        request,
+                        options,
+                        topic,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Published::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let publication = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Published(
-                        Published { request, publication }
-                    ))
+                    Ok(Self::Published(Published {
+                        request,
+                        publication,
+                    }))
                 }
 
                 Subscribe::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let options = validate_dict_argument(data.array_remove(0))?;
                     let topic = validate_str_argument(data.array_remove(0))?;
-                    Ok(Self::Subscribe(
-                        Subscribe { request, options, topic }
-                    ))
+                    Ok(Self::Subscribe(Subscribe {
+                        request,
+                        options,
+                        topic,
+                    }))
                 }
 
                 Subscribed::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let subscription = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Subscribed(
-                        Subscribed { request, subscription }
-                    ))
+                    Ok(Self::Subscribed(Subscribed {
+                        request,
+                        subscription,
+                    }))
                 }
 
                 Unsubscribe::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let subscription: u64 = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Unsubscribe(
-                        Unsubscribe { request, subscription }
-                    ))
+                    Ok(Self::Unsubscribe(Unsubscribe {
+                        request,
+                        subscription,
+                    }))
                 }
 
                 Unsubscribed::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Unsubscribed(
-                        Unsubscribed { request }
-                    ))
+                    Ok(Self::Unsubscribed(Unsubscribed { request }))
                 }
 
                 Event::ID => {
@@ -1595,9 +1917,13 @@ impl Events {
                     let details = validate_dict_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::Event(
-                        Event { subscription, publication, details, args, kwargs }
-                    ))
+                    Ok(Self::Event(Event {
+                        subscription,
+                        publication,
+                        details,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Call::ID => {
@@ -1606,17 +1932,19 @@ impl Events {
                     let procedure = validate_str_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::Call(
-                        Call { request, options, procedure, args, kwargs }
-                    ))
+                    Ok(Self::Call(Call {
+                        request,
+                        options,
+                        procedure,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Cancel::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let options = validate_dict_argument(data.array_remove(0))?;
-                    Ok(Self::Cancel(
-                        Cancel { request, options }
-                    ))
+                    Ok(Self::Cancel(Cancel { request, options }))
                 }
 
                 MessageResult::ID => {
@@ -1624,41 +1952,46 @@ impl Events {
                     let details = validate_dict_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::MessageResult(
-                        MessageResult { request, details, args, kwargs }
-                    ))
+                    Ok(Self::MessageResult(MessageResult {
+                        request,
+                        details,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Register::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let options = validate_dict_argument(data.array_remove(0))?;
                     let procedure = validate_str_argument(data.array_remove(0))?;
-                    Ok(Self::Register(
-                        Register { request, options, procedure }
-                    ))
+                    Ok(Self::Register(Register {
+                        request,
+                        options,
+                        procedure,
+                    }))
                 }
 
                 Registered::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let registration = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Registered(
-                        Registered { request, registration }
-                    ))
+                    Ok(Self::Registered(Registered {
+                        request,
+                        registration,
+                    }))
                 }
 
                 Unregister::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let registration = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Unregister(
-                        Unregister { request, registration }
-                    ))
+                    Ok(Self::Unregister(Unregister {
+                        request,
+                        registration,
+                    }))
                 }
 
                 Unregistered::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
-                    Ok(Self::Unregistered(
-                        Unregistered { request }
-                    ))
+                    Ok(Self::Unregistered(Unregistered { request }))
                 }
 
                 Invocation::ID => {
@@ -1667,17 +2000,19 @@ impl Events {
                     let details = validate_dict_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::Invocation(
-                        Invocation { request, registration, details, args, kwargs }
-                    ))
+                    Ok(Self::Invocation(Invocation {
+                        request,
+                        registration,
+                        details,
+                        args,
+                        kwargs,
+                    }))
                 }
 
                 Interrupt::ID => {
                     let request = validate_u64_argument(data.array_remove(0))?;
                     let options = validate_dict_argument(data.array_remove(0))?;
-                    Ok(Self::Interrupt(
-                        Interrupt { request, options }
-                    ))
+                    Ok(Self::Interrupt(Interrupt { request, options }))
                 }
 
                 Yield::ID => {
@@ -1685,14 +2020,15 @@ impl Events {
                     let options = validate_dict_argument(data.array_remove(0))?;
                     let args = validate_args(data.array_remove(0))?;
                     let kwargs = validate_kwargs(data.array_remove(0))?;
-                    Ok(Self::Yield(
-                        Yield { request, options, args, kwargs }
-                    ))
+                    Ok(Self::Yield(Yield {
+                        request,
+                        options,
+                        args,
+                        kwargs,
+                    }))
                 }
 
-                _ => {
-                    Err(Error::ExtensionMessage)
-                }
+                _ => Err(Error::ExtensionMessage),
             }
         } else {
             Err(Error::InvalidId)
@@ -1705,7 +2041,7 @@ impl Events {
             Self::Authenticate(_authenticate) => false,
             Self::Cancel(_cancel) => false,
             Self::Interrupt(_interrupt) => false,
-            _ => true
+            _ => true,
         }
     }
 
@@ -1715,7 +2051,7 @@ impl Events {
             Self::Authenticate(_authenticate) => true,
             Self::Cancel(_cancel) => true,
             Self::Interrupt(_interrupt) => true,
-            _ => false
+            _ => false,
         }
     }
 }
